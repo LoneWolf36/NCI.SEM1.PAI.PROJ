@@ -1,0 +1,36 @@
+{
+  "run_id": "8df81931-6",
+  "n_patients": 100000,
+  "n_rows": 388375,
+  "positive_rate": 0.1815281622143547,
+  "train_rows": 310909,
+  "test_rows": 77466,
+  "models": {
+    "Logistic Regression": {
+      "AUC": 0.6308666473339175,
+      "Avg Precision": 0.29371104658075575,
+      "Accuracy": 0.6053365347378205,
+      "Precision": 0.2478635087290929,
+      "Recall": 0.577965981068963,
+      "F1": 0.3469400833066325
+    },
+    "CatBoost": {
+      "AUC": 0.6453301425300283,
+      "Avg Precision": 0.30003378512291334,
+      "Accuracy": 0.6728500245268892,
+      "Precision": 0.27352587244283993,
+      "Recall": 0.4853035371147961,
+      "F1": 0.3498627536492137
+    },
+    "LightGBM": {
+      "AUC": 0.6242151897150912,
+      "Avg Precision": 0.2751284766775122,
+      "Accuracy": 0.7408669609893372,
+      "Precision": 0.29464711899079443,
+      "Recall": 0.3075225962564942,
+      "F1": 0.30094720713191253
+    }
+  },
+  "best_model": "CatBoost",
+  "artifacts_dir": "../outputs/analysis"
+}

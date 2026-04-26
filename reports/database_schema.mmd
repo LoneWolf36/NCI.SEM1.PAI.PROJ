@@ -1,0 +1,122 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#ffffff',
+    'primaryBorderColor': '#555555',
+    'lineColor': '#333333',
+    'fontFamily': 'arial',
+    'fontSize': '14px',
+    'tertiaryColor': '#f4f4f4',
+    'tertiaryBorderColor': '#aaaaaa'
+  }
+}}%%
+erDiagram
+    %% Raw Tables
+    raw_patient_summary {
+        TEXT pat_id PK
+        TEXT state
+        TEXT age_range
+        TEXT primdiag
+    }
+    raw_admit_treatment {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        TEXT admit_date
+        TEXT modality
+    }
+    raw_cl_hospitalization {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        TEXT clinical_month_year
+        TEXT hospital_admit_date
+    }
+    raw_cl_hd_adqcy {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        TEXT clinical_month_year
+        TEXT hd_ktv
+    }
+
+    %% Clean Tables
+    clean_patient_summary {
+        TEXT pat_id PK
+        TEXT state
+        TEXT primdiag
+    }
+    clean_admit_treatment {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        INT treatment_event_date
+        TEXT modality
+    }
+    clean_cl_hospitalization {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        INT clinical_month_year
+        INT hospital_admit_date
+    }
+    clean_cl_hd_adqcy {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        INT clncl_mo_yr
+        REAL hd_ktv
+    }
+
+    %% Derived Tables
+    derived_readmission_events {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        INT clinical_month_year
+        INT hospital_admit_date
+        INT readmitted_30d
+    }
+    derived_patient_features {
+        TEXT pat_id PK
+        INT treatment_records
+        INT hospitalization_count
+        REAL patient_readmit_30d_rate
+    }
+
+    %% Modeling Mart
+    model_feature_mart {
+        TEXT pat_id FK
+        TEXT prov_nbr FK
+        INT clinical_month_year
+        INT hospital_admit_date
+        INT readmitted_30d
+    }
+
+    %% Tracking Tables
+    model_runs {
+        TEXT run_id PK
+        TEXT model_name
+        TEXT created_at
+    }
+    evaluation_metrics {
+        TEXT run_id FK
+        TEXT split
+        REAL auc
+        REAL f1
+    }
+    figure_registry {
+        TEXT figure_name PK
+        TEXT file_path
+        TEXT created_at
+    }
+
+    %% Relationships
+    raw_patient_summary ||--o{ raw_admit_treatment : "pat_id"
+    raw_patient_summary ||--o{ raw_cl_hospitalization : "pat_id"
+    raw_patient_summary ||--o{ raw_cl_hd_adqcy : "pat_id"
+
+    clean_patient_summary ||--o{ clean_admit_treatment : "pat_id"
+    clean_patient_summary ||--o{ clean_cl_hospitalization : "pat_id"
+    clean_patient_summary ||--o{ clean_cl_hd_adqcy : "pat_id"
+
+    clean_patient_summary ||--|| derived_patient_features : "pat_id"
+    clean_cl_hospitalization ||--o{ derived_readmission_events : "pat_id, prov_nbr"
+    
+    derived_patient_features ||--o{ model_feature_mart : "pat_id"
+    derived_readmission_events ||--|| model_feature_mart : "pat_id, prov_nbr, date"
+
+    model_runs ||--o{ evaluation_metrics : "run_id"

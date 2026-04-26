@@ -1,0 +1,10 @@
+# Agent directories
+.claude/
+.codex/
+.opencode/
+.gemini/
+.agents/
+.cavemem/
+data/downloads/
+*.zip
+*.mp4

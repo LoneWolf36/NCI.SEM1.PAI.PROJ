@@ -1,0 +1,388 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{lipsum}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Predicting 30-Day Hospital Readmission Risk in Dialysis Patients Using Linked CMS ESRD Data}
+
+\author{
+    \IEEEauthorblockN{Mohammed Faizan Khan}
+    \IEEEauthorblockA{
+        Student ID: 25214501 \\
+        Email: faizan.khan@example.com
+    }
+    \and
+    \IEEEauthorblockN{Sakshi Patil}
+    \IEEEauthorblockA{
+        Student ID: 24304166 \\
+        Email: sakshi.patil@example.com
+    }
+    \and
+    \IEEEauthorblockN{Shashank Yadav}
+    \IEEEauthorblockA{
+        Student ID: 25118692 \\
+        Email: shashank.yadav@example.com
+    }
+    \and
+    \IEEEauthorblockN{Chetan Panchal}
+    \IEEEauthorblockA{
+        Student ID: 24244058 \\
+        Email: chetan.panchal@example.com
+    }
+}
+
+\maketitle
+
+\begin{abstract}
+Thirty-day readmission is a key quality indicator in dialysis care for End-Stage Renal Disease (ESRD). We build a machine learning pipeline using four linked CMS ESRD Population Public Use File (PUF) tables: 
+\texttt{PATIENT\_SUMMARY}, \texttt{ADMIT\_TREATMENT}, \texttt{CL\_HOSPITALIZATION}, and \texttt{CL\_HD\_ADQCY}. These sources are integrated into a patient-level feature mart combining demographics, treatment history, hospitalization trajectories, admission/discharge diagnosis context, and dialysis adequacy. The workflow is database-first and uses patient-level train-test partitioning to limit leakage. We compare Logistic Regression, LightGBM, and CatBoost on 388,375 hospitalization events from 100,000 patients. CatBoost performs best (AUC: 0.6453, F1: 0.3499). SHAP analysis shows that prior hospitalization burden, recent hospitalization activity, and length of stay are the strongest predictors. Discrimination is moderate, but linked administrative ESRD data with temporal features provide useful signal for practical risk stratification.
+\end{abstract}
+
+\begin{IEEEkeywords}
+dialysis, hospital readmission, machine learning, CMS ESRD, predictive modeling, SHAP
+\end{IEEEkeywords}
+
+\section{Introduction}
+Thirty-day hospital readmission remains a central quality indicator, and the burden is high among dialysis patients with ESRD. Frequent transitions across facilities, recurrent acute events, and complex treatment schedules make this population difficult to manage after discharge. A practical risk model could help clinicians prioritize follow-up, allocate care coordination resources, and target avoidable returns to hospital.
+
+Machine learning has improved readmission prediction in other cohorts, but ESRD-specific evidence remains limited. Studies in diabetes and heart failure show gains over traditional baselines but rarely include dialysis treatment context or adequacy signals \cite{liu2024machine,jahangiri2024predicting}. Dialysis-focused ML work often targets complications, adequacy metrics, or disease progression instead of post-discharge 30-day readmission \cite{hsieh2023predicting,kim2021machine,wang2025machine}.
+
+We address this gap using four linked tables from the CMS ESRD Population Public Use File (PUF). Their combination captures demographic profile, treatment episode history, hospitalization sequences, and hemodialysis adequacy records in one coherent analytical pipeline. This linked design supports temporal feature engineering and a clinically grounded definition of readmission.
+
+The practical challenge is data construction as much as model choice. ESRD signals are spread across patient-, episode-, and month-level tables, so strict chronology is required to avoid future information leakage.
+
+This creates a dual requirement: robust modeling and defensible event construction. If temporal order is not enforced, metrics can improve artificially while reflecting future information leakage rather than clinically useful patterns. We therefore prioritize deterministic joins, explicit timestamp logic, and feature windows that match the information available at the point of discharge.
+
+Our primary objective is to develop and evaluate a machine learning model for predicting 30-day hospital readmission risk in dialysis patients. We focus on the following key aspects:
+\begin{enumerate}
+    \item Integrate four CMS ESRD tables into one patient-level analytical structure.
+    \item Engineer temporal and clinical features from demographics, treatment, hospitalization, and adequacy records.
+    \item Compare Logistic Regression, CatBoost, and LightGBM.
+    \item Interpret predictions using SHAP.
+    \item Evaluate with patient-level partitioning and standard classification metrics.
+\end{enumerate}
+
+\noindent\textbf{Research Question:} Can machine learning predict 30-day hospital readmission risk in dialysis / ESRD patients using linked CMS ESRD patient, treatment, hospitalization, and dialysis adequacy data?
+
+Our contribution is not a new algorithm. The novelty is a database-first, four-table ESRD workflow that derives a real 30-day readmission label from hospitalization sequences and joins it with treatment history, demographics, and adequacy features.
+
+The remainder of this paper is organized as follows: Section II describes the datasets used in this study. Section III outlines our methodology. Section IV presents the results and evaluation. Section V discusses related work. Section VI concludes with findings on novelty, significance, impact, and future work.
+
+\section{Datasets}
+\subsection{Overview}
+We use four public datasets from the CMS ESRD Population PUF. Together, they cover demographics, treatment history, hospitalization events, and dialysis adequacy, enabling patient-level readmission modeling in a single linked data environment.
+
+Each table contributes a distinct view: \texttt{PATIENT_SUMMARY} for stable descriptors, \texttt{ADMIT_TREATMENT} for treatment episodes, \texttt{CL_HOSPITALIZATION} for event timing and label derivation, and \texttt{CL_HD_ADQCY} for adequacy signals such as Kt/V.
+
+\subsection{Dataset Descriptions}
+\subsubsection{1. PATIENT_SUMMARY}
+\begin{itemize}
+    \item \textbf{Source/File/URL}: CMS ESRD Population PUF, \texttt{patient_summary.zip}, \texttt{https://downloads.cms.gov/files/patient_summary.zip}
+    \item \textbf{Rows/Granularity}: 3,197,683 patient-level records
+    \item \textbf{Role}: Demographic and diagnosis context
+    \item \textbf{Key Fields}:
+    \begin{itemize}
+        \item \texttt{pat_id}: Unique patient identifier
+        \item \texttt{state}: Patient's state of residence
+        \item \texttt{age_range}: Patient's age range
+        \item \texttt{race}: Patient's race
+        \item \texttt{gender}: Patient's gender
+        \item \texttt{ethnicity}: Patient's ethnicity
+        \item \texttt{primdiag}: Primary diagnosis
+        \item \texttt{primcause}: Primary cause of ESRD
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{2. ADMIT_TREATMENT}
+\begin{itemize}
+    \item \textbf{Source/File/URL}: CMS ESRD Population PUF, \texttt{admit_treatment.zip}, \texttt{https://downloads.cms.gov/files/admit_treatment.zip}
+    \item \textbf{Rows/Granularity}: 7,720,441 patient-treatment episodes
+    \item \textbf{Role}: Treatment history, modality, and dialysis setting
+    \item \textbf{Key Fields}:
+    \begin{itemize}
+        \item \texttt{pat_id}: Unique patient identifier
+        \item \texttt{prov_nbr}: Provider number
+        \item \texttt{Admit_Date}: Treatment admission date
+        \item \texttt{Discharge_Date}: Treatment discharge date
+        \item \texttt{Dialysis_Setting}: Setting where dialysis was performed
+        \item \texttt{Treatment_Type}: Type of treatment
+        \item \texttt{Dialysis_Type}: Type of dialysis
+        \item \texttt{Modality}: Dialysis modality
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{3. CL_HOSPITALIZATION}
+\begin{itemize}
+    \item \textbf{Source/File/URL}: CMS ESRD Population PUF, \texttt{cl_hospitalization.zip}, \texttt{https://downloads.cms.gov/files/cl_hospitalization.zip}
+    \item \textbf{Rows/Granularity}: 3,899,711 patient-facility-month hospitalization events
+    \item \textbf{Role}: Derive the true 30-day readmission target
+    \item \textbf{Key Fields}:
+    \begin{itemize}
+        \item \texttt{pat_id}: Unique patient identifier
+        \item \texttt{prov_nbr}: Provider number
+        \item \texttt{clinical_month_year}: Clinical month and year
+        \item \texttt{Hospital_Admit_Date}: Hospital admission date
+        \item \texttt{Hospital_Discharge_Date}: Hospital discharge date
+        \item \texttt{Hospital_Discharge_Diag}: Hospital discharge diagnosis
+        \item \texttt{Hospital_Admit_Diag}: Hospital admission diagnosis
+        \item \texttt{Length_of_Stay}: Length of hospital stay
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{4. CL_HD_ADQCY}
+\begin{itemize}
+    \item \textbf{Source/File/URL}: CMS ESRD Population PUF, \texttt{cl_hd_adqcy.zip}, \texttt{https://downloads.cms.gov/files/cl_hd_adqcy.zip}
+    \item \textbf{Rows/Granularity}: 32,250,552 patient-facility-month hemodialysis adequacy records
+    \item \textbf{Role}: Dialysis adequacy measures including Kt/V
+    \item \textbf{Key Fields}:
+    \begin{itemize}
+        \item \texttt{pat_id}: Unique patient identifier
+        \item \texttt{prov_nbr}: Provider number
+        \item \texttt{clncl_mo_yr}: Clinical month and year
+        \item \texttt{modality}: Dialysis modality
+        \item \texttt{hd_ktv}: Kt/V value
+        \item \texttt{hd_ktv_coll_date}: Kt/V collection date
+        \item \texttt{hd_ktv_method}: Kt/V calculation method
+    \end{itemize}
+\end{itemize}
+
+\subsection{Data Linkage and Cohort Construction}
+The four datasets are linked by \texttt{pat_id} (patient identifier) and \texttt{prov_nbr} (provider number), producing a unified view of demographics, treatment pathways, hospitalization history, and adequacy measures.
+
+Linkage follows temporal order. For each index discharge event, only information available up to that discharge date is retained. This design prevents forward leakage from future admissions, treatments, or adequacy measurements. We also preserve the original event chronology so that rolling counts (e.g., recent admissions in 180 days) are computed from prior windows only.
+
+Our final analytical cohort consists of 3,098,950 hospital discharge events from 3,197,683 unique patients. The target variable, 30-day readmission, is derived from the \texttt{CL_HOSPITALIZATION} dataset by calculating the time between consecutive hospital discharge and admission events for each patient. A total of 566,629 (18.28\%) discharge events resulted in a readmission within 30 days.
+
+Class balance is clinically realistic for readmission modeling: positive events are frequent enough for supervised learning but remain a minority class.
+
+The linkage design also supports transparent validation. Because each engineered variable maps to a source table and a defined look-back period, we can audit whether model signal comes from baseline patient context, treatment trajectory, or recent utilization burden. This improves reproducibility and simplifies communication with non-technical stakeholders.
+
+\subsection{Improvements Over Previous Approach}
+Compared with our earlier approach, this pipeline improves on four points:
+\begin{itemize}
+    \item \textbf{Real Outcome Variable}: The label comes from observed hospitalization sequences, not synthetic assignment.
+    \item \textbf{Multi-Table Linkage}: All data sources belong to one CMS ESRD ecosystem, improving consistency.
+    \item \textbf{Clinical Relevance}: Inclusion of \texttt{CL_HD_ADQCY} adds dialysis adequacy context.
+    \item \textbf{Scale}: Over 3 million patients and 32 million adequacy records support stable estimation.
+\end{itemize}
+
+\section{Methodology}
+\subsection{Data Ingestion and Preprocessing}
+Our pipeline follows a database-first approach: raw CMS files are loaded into SQLite before analysis. This structure improves traceability and reproducibility.
+
+The database layer enforces deterministic transformations and creates inspectable intermediate tables.
+
+\begin{enumerate}
+    \item \textbf{Raw Data Storage}: All four datasets are stored as raw SQLite tables in \texttt{dialysis_readmission.db}.
+    \item \textbf{Data Cleaning}: Standardize names, handle missingness, and normalize types (e.g., 6-digit provider IDs, parsed dates).
+    \item \textbf{Feature Engineering}: We construct features in four groups:
+    \begin{itemize}
+        \item \textbf{Demographic Features}: Age range, race, gender, and ethnicity from \texttt{PATIENT_SUMMARY}.
+        \item \textbf{Treatment History Features}: Flags for hemodialysis and center-based dialysis, counts of recent treatments, and days since last treatment from \texttt{ADMIT_TREATMENT}.
+        \item \textbf{Hospitalization Features}: Length of stay, admission diagnosis, discharge diagnosis where present, gap from previous discharge, and counts of recent hospitalizations from \texttt{CL_HOSPITALIZATION}.
+        \item \textbf{Dialysis Adequacy Features}: Recent Kt/V values, historical averages, and trends from \texttt{CL_HD_ADQCY}.
+    \end{itemize}
+    \item \textbf{Target Derivation}: We label 30-day readmission using consecutive discharge--admission gaps from \texttt{CL_HOSPITALIZATION}.
+    \item \textbf{Final Analytical Table}: Features and outcome are merged into \texttt{model_feature_mart} for training.
+\end{enumerate}
+
+Feature design favors compact, interpretable summaries: utilization burden and recency, treatment modality/setting/gaps, and recent Kt/V history.
+
+We avoid highly opaque transformations in favor of features clinicians can reason about. Examples include counts of prior admissions, short-term hospitalization density, and time since recent treatment or discharge. This design choice reduces implementation complexity while preserving key temporal signal for short-horizon risk prediction.
+
+\subsection{Modeling Approach}
+We use patient-level partitioning to prevent leakage: all events from one patient stay in either train or test. This is essential in longitudinal hospitalization data.
+
+Without patient-level separation, repeated events can appear in both splits and inflate performance.
+
+Our modeling portfolio consists of three models:
+\begin{enumerate}
+    \item \textbf{Logistic Regression (Baseline)}: Linear baseline with class balancing.
+    \item \textbf{CatBoost (Main Model)}: Gradient boosting with strong categorical handling.
+    \item \textbf{LightGBM (Challenger)}: Alternative boosting model for comparison and stability checks.
+\end{enumerate}
+
+\subsection{Model Training and Evaluation}
+\begin{itemize}
+    \item \textbf{Split Strategy}: 80/20 patient-level stratified split preserves class balance.
+    \item \textbf{Feature Handling}: CatBoost and LightGBM use native categorical support; Logistic Regression uses one-hot encoding. Numeric missing values are median-imputed.
+    \item \textbf{Threshold Selection}: We tune the decision threshold on the training split to maximize F1, then reuse that threshold on the held-out test split.
+    \item \textbf{Evaluation Metrics}: We report complementary metrics:
+    \begin{itemize}
+        \item \textbf{AUC (Area Under the ROC Curve)}: Measures the model's ability to discriminate between readmission and non-readmission cases.
+        \item \textbf{Average Precision}: Focuses on the precision-recall trade-off, particularly relevant for our imbalanced dataset.
+        \item \textbf{Accuracy, Precision, Recall, F1-Score}: Traditional classification metrics to assess overall performance.
+    \end{itemize}
+    \item \textbf{Interpretability Analysis}: For CatBoost, SHAP quantifies feature contributions and interactions.
+\end{itemize}
+
+We report multiple metrics because operational priorities differ across ranking and threshold-based use.
+
+No single metric captures deployment behavior for imbalanced clinical tasks. AUC reflects overall ranking quality, Average Precision emphasizes minority-class retrieval, and precision/recall characterize threshold-level trade-offs. F1 offers a compact balance between missed high-risk patients and unnecessary alerts, while accuracy is retained for comparability with baseline reporting conventions.
+
+\subsection{End-to-End Workflow Diagram}
+Figure~\ref{fig:pipeline} summarizes the pipeline from source acquisition to modeling outputs.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=0.48\textwidth]{pipeline.png}}
+\caption{End-to-end CMS ESRD readmission workflow implemented in this project.}
+\label{fig:pipeline}
+\end{figure}
+
+The workflow is database-first: raw ZIP files are ingested into SQLite, normalized, transformed into event-level and patient-level derivatives, and joined into a modeling mart.
+
+\subsection{Implementation Details}
+Data processing and modeling are implemented in Python using pandas, scikit-learn, CatBoost, LightGBM, and SHAP. Execution is organized through scripts (\texttt{ingest_datasets.py}, \texttt{train_readmission_models.py}) and a final notebook (\texttt{final_cms_esrd_readmission_workflow.ipynb}) that documents the complete workflow.
+
+The script-first design reduces dependence on notebook state and improves auditability.
+
+\section{Results and Evaluation}
+\subsection{Model Performance}
+We evaluated models on a stratified sample of 100,000 unique patients (388,375 hospitalization events). CatBoost remains the strongest overall model, while threshold optimization makes the baseline much more competitive on recall and F1.
+
+Logistic Regression reaches the highest recall after threshold tuning, but its ranking quality remains weaker than CatBoost. CatBoost delivers the best overall balance of AUC, Average Precision, and F1, which makes it the most defensible choice for risk ranking.
+
+This contrast is operationally important. High accuracy alone would not support targeted follow-up because many positive cases would be missed. The tree-based models provide stronger minority-class capture and materially better balance between sensitivity and precision, which better aligns with practical risk-screening use.
+
+\begin{table}[htbp]
+\caption{Model Performance Comparison}
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{AUC} & \textbf{Avg Prec} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\hline
+Logistic Regression & 0.6309 & 0.2937 & 0.6053 & 0.2479 & 0.5780 & 0.3469 \\
+LightGBM & 0.6242 & 0.2751 & 0.7409 & 0.2946 & 0.3075 & 0.3009 \\
+CatBoost & 0.6453 & 0.3000 & 0.6729 & 0.2735 & 0.4853 & 0.3499 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+CatBoost is the strongest model (AUC 0.6453, F1 0.3499). Performance is moderate, but improvement over baseline is consistent.
+
+These values support risk ranking, not autonomous diagnosis.
+
+Accordingly, the predicted score should be interpreted as a prioritization signal. A realistic use case is stratified post-discharge outreach, where high-risk patients receive earlier contact and additional coordination resources, and final decisions remain with clinical teams.
+
+\subsection{Feature Importance and Interpretability}
+SHAP analysis of the CatBoost model reveals the key drivers of readmission risk predictions:
+
+\begin{enumerate}
+    \item \textbf{Prior Hospitalization Count}: The total number of previous hospitalizations is the most influential feature, highlighting the strong temporal correlation in readmission risk.
+    \item \textbf{Recent Hospitalization Activity}: The number of hospitalizations within the last 180 days is also highly influential, indicating that recent health instability is a strong predictor.
+    \item \textbf{Length of Stay}: Longer hospital stays are associated with higher readmission risk, possibly reflecting greater illness severity.
+    \item \textbf{Primary Cause of ESRD}: The underlying cause of kidney failure plays a significant role, suggesting that patient subpopulations have different risk profiles.
+    \item \textbf{Time Since Last Discharge}: A shorter gap since the previous hospital discharge is associated with higher risk.
+\end{enumerate}
+
+Dialysis adequacy measures (e.g., Kt/V) are informative but not dominant in global SHAP rankings; within a 30-day horizon, utilization markers carry more predictive weight.
+
+\subsection{Subgroup Analysis}
+We examined performance across demographic strata:
+
+\begin{itemize}
+    \item \textbf{Age Groups}: Model performance varies moderately across age groups, with slightly better performance for younger patients (18-44) and older patients (85+).
+    \item \textbf{Race}: Performance differences across racial groups are modest, with Native American patients showing the highest F1-score.
+    \item \textbf{Gender}: Minimal performance differences were observed between male and female patients.
+\end{itemize}
+
+Overall variation is modest, suggesting broad utility with room for subgroup-specific calibration and fairness monitoring.
+
+\subsection{Limitations}
+Several limitations should be noted:
+\begin{enumerate}
+    \item \textbf{Performance Ceiling}: The moderate AUC indicates that our model captures only a portion of the factors influencing readmission risk.
+    \item \textbf{Data Constraints}: Administrative data omit factors such as medication adherence and socioeconomic context.
+    \item \textbf{Temporal Scope}: Models are trained on a fixed period; transportability across periods requires further testing.
+\end{enumerate}
+
+Despite these limits, linked ESRD tables support feasible and interpretable readmission modeling, with temporal history features carrying most predictive signal.
+
+\section{Related Work}
+Our study connects three research strands in healthcare ML and dialysis care.
+
+\subsection{General Readmission Prediction}
+Liu et al. and Jahangiri et al. show that ML can improve readmission discrimination in diabetes and heart failure cohorts \cite{liu2024machine,jahangiri2024predicting}. Their feature spaces, however, do not include dialysis treatment context or ESRD adequacy indicators.
+
+\subsection{Dialysis-Specific Research}
+Hsieh et al. predict hemodialysis complications using IoMT-derived inputs \cite{hsieh2023predicting}. Kim et al. model adequacy measures (Kt/V, URR) \cite{kim2021machine}. Wang et al. focus on CKD progression \cite{wang2025machine}. These studies are methodologically relevant but target different clinical endpoints.
+
+\subsection{Methodological Approaches}
+Our approach follows common healthcare ML practice:
+\begin{itemize}
+    \item \textbf{Temporal Modeling}: We prioritize engineered temporal features over deep sequential architectures for this task.
+    \item \textbf{Interpretability}: SHAP supports feature-level explanation aligned with clinical transparency requirements.
+    \item \textbf{Data Linkage}: Multi-table linkage creates a more complete utilization history for risk estimation.
+\end{itemize}
+
+Model complexity alone does not guarantee utility; event construction and validation remain central.
+
+This is particularly true for administrative data, where coding structure and linkage quality strongly influence measured performance. Even advanced models can produce optimistic results if labels are weakly defined or if train-test splitting allows patient overlap. Our approach emphasizes methodological reliability over architectural novelty.
+
+\subsection{Key Differences and Contributions}
+Key distinctions from prior work are:
+\begin{enumerate}
+    \item \textbf{Data Source}: Four linked CMS ESRD datasets provide broader coverage than single-table designs.
+    \item \textbf{Outcome Definition}: Readmission is defined from observed hospitalization sequences.
+    \item \textbf{Feature Engineering}: Temporal utilization features capture near-term instability.
+    \item \textbf{Model Evaluation}: Patient-level splitting reduces optimistic bias from leakage.
+\end{enumerate}
+
+These choices position the study as a practical, reproducible extension aligned with ESRD administrative workflows.
+
+\section{Conclusions and Future Work}
+\subsection{Novelty, Significance, and Impact}
+This work contributes to dialysis readmission modeling in five concrete ways:
+
+\begin{enumerate}
+    \item \textbf{Linked Data Design}: Four CMS ESRD tables are integrated into one patient-level modeling workflow.
+    
+    \item \textbf{Observed Outcome Definition}: The 30-day label is derived from actual hospitalization timing, not a proxy target.
+    
+    \item \textbf{Temporal Feature Engineering}: Recent hospitalization burden and discharge timing are explicitly encoded.
+    
+    \item \textbf{Interpretability}: SHAP analysis identifies clinically understandable drivers of predicted risk.
+    
+    \item \textbf{Leakage-Aware Evaluation}: Patient-level train-test partitioning provides more defensible performance estimates.
+\end{enumerate}
+
+\subsection{Significance}
+Readmission remains a major quality and cost challenge in dialysis care. Although discrimination is moderate, the model can support triage for discharge planning and post-discharge follow-up. The main practical value is feasibility: many institutions can use administrative data before full EHR integration. Impact depends on integration into score-triggered response tiers and monitoring of avoidable readmissions.
+
+\subsection{Impact}
+The model is not suitable for autonomous decisions, but it is useful for risk prioritization with clinician oversight. Feature patterns point to utilization-driven interventions, such as intensified follow-up after recurrent admissions, and the pipeline can be adapted to other chronic-care cohorts using linked administrative data.
+
+The broader impact is translational. The same framework can support iterative quality-improvement cycles, including periodic retraining, calibration checks, subgroup monitoring, and threshold adjustments based on workflow capacity. This positions the model as one component in an integrated discharge-to-follow-up process rather than an isolated technical artifact.
+
+\subsection{Future Work}
+Several promising directions exist for extending this work:
+
+\begin{enumerate}
+    \item \textbf{Enhanced Feature Sets}: Add medication, comorbidity burden, and socioeconomic indicators.
+    
+    \item \textbf{Advanced Modeling Techniques}: Evaluate temporal deep models and calibrated ensembles.
+    
+    \item \textbf{Causal Analysis}: Estimate intervention effects rather than predictive associations alone.
+    
+    \item \textbf{Real-Time Deployment}: Integrate prospective scoring into discharge and care-management workflows.
+    
+    \item \textbf{Subpopulation-Specific Models}: Develop subgroup-tuned models and fairness-aware calibration.
+\end{enumerate}
+
+Overall, this study provides a reproducible baseline for ESRD readmission prediction using linked public administrative data.
+
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

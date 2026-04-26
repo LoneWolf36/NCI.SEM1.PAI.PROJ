@@ -1,0 +1,218 @@
+National
+ 
+College
+ 
+of
+ 
+Ireland
+Programming
+ 
+for
+ 
+AI
+MSCAI1,
+ 
+MSCAI1B
+Release Date: 
+23
+rd
+ March 
+202
+6
+Due Date: Monday 
+24
+th
+ April 
+202
+6
+Dr.
+ 
+Abdul
+ 
+Razzaq, Jaswinder Singh, Shreyas Setlur Arun
+Terminal
+ 
+Assessment
+Weight:
+ 
+The
+ 
+assignment
+ 
+will
+ 
+be
+ 
+marked
+ 
+out
+ 
+of
+ 
+100.
+ 
+70%
+TURNITIN
+: All report submissions will be electronically screened for evidence of academic misconduct (i.e., plagiarism and collusion)
+Duration
+ 
+of
+ 
+Continuous
+ 
+Assessment: 
+42
+ 
+days
+Attachments:
+ 
+ONLY
+ 
+one
+ 
+Zip
+ file
+1. Overview
+This project is designed to evaluate the learning objectives of the Programming for AI module. Students are expected to design and implement a data-driven AI project that addresses a clearly motivated and novel question, demonstrates technical competence, and communicates meaningful findings with academic rigour.
+The project should go beyond simply applying standard tools to a readily available dataset. Strong submissions will show originality in problem framing, creativity in combining or exploiting datasets, thoughtful model design, and a convincing explanation of why the work matters.
+Assessment Type
+Team-based terminal assessment
+Team Size
+3-4 students per team
+Submission Format
+One team submission for report, presentation, and code artefact; one individual submission for each journal
+Duration
+42 days
+Primary Submission Packaging
+ONLY one Zip file for the code artefact and related assets
+2. Learning Outcomes
+LO
+Learning Outcome
+LO1
+Analyse, compare, contrast and critically evaluate the characteristics of programming languages and environments commonly utilised for AI solutions implementation.
+LO2
+Critically assess the challenges associated with implementing AI solutions for various problems.
+LO3
+Critically assess methods and practices for software development in order to design and implement AI solution requirements.
+LO4
+Evaluate, design and implement AI solutions by using key algorithms, data structures, and relevant programming languages.
+3. Project Objective and Scope
+The objective of this project is to identify and carry out a series of analyses on a collection of datasets that are related to, or complementary with, one another by using appropriate programming languages, programming environments, and database systems.
+Your project should answer a clear research or application question. That question must be novel in its framing, practically relevant, and supported by an argument explaining why the problem is significant and what impact the proposed work could have.
+Minimum scope requirements:
+Three or four structured or semi-structured datasets must be used.
+Each dataset should contain at least 1,000 records.
+Datasets must be programmatically stored in appropriate database(s) prior to processing.
+Programmatic pre-processing, transformation, analysis, and visualisation of the data are required.
+Processed output data should also be programmatically stored in appropriate databases where relevant.
+The full workflow should show a coherent end-to-end process rather than isolated scripts.
+For example, you could use Python to programmatically retrieve semi-structured datasets (such as XML or JSON), or web-scraped or streaming data, store them in an appropriate database management system, transform them into structured forms, and then apply analysis or AI techniques to discover meaningful patterns. However, stronger projects will also demonstrate why the chosen problem is interesting, what makes the approach distinctive, and how the output could be useful.
+4. Suggested Data Sources
+The following sources are suitable starting points. Keep all URLs exactly as shown below in your records and references where relevant:
+https://catalog.data.gov/dataset?res_format=XML
+http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/
+https://data.gov.ie/dataset?res_format=JSON
+https://catalog.data.gov/dataset?res_format=JSON
+https://data.worldbank.org/
+A list of other potential sources may also be posted on Moodle.
+5. Deliverables
+5.1 Project Report
+The objectives, methodology, and results of your analysis should be presented in the form of a project report. The report should discuss the programming, modelling, and data-processing challenges encountered, together with the decisions you made to address them.
+The report should be around 3,000 words in length (excluding references), should use appropriate academic style and referencing, and should be presented in IEEE conference format. Templates for Microsoft Word and LaTeX can be downloaded from:
+https://www.ieee.org/conferences_events/conferences/publishing/templates.html
+The report should contain the following sections, with clear evidence of novelty, significance, and impact throughout:
+Abstract: 
+Summarise the project problem, aims, datasets, methods, principal findings, and practical or research contribution.
+Introduction: 
+Motivate the topic, explain why the problem matters, state the project objectives, and present the research question(s). The novelty of the work should be clearly stated here.
+Related Work: 
+Critically evaluate relevant academic work, identify limitations in existing approaches, and explain how your project is positioned differently or adds value.
+Methodology: 
+Describe the datasets, preprocessing, databases, modelling choices, evaluation strategy, technologies, and overall workflow. Include diagrams showing the full pipeline.
+Results and Evaluation: 
+Present the findings using tables, figures, and discussion. Explain what was discovered, how well the approach worked, and what the results mean.
+Conclusions and Future Work: 
+Reflect critically on what others can learn from your work, discuss limitations, explain the significance of your findings, and suggest realistic future extensions.
+Bibliography: 
+Provide a complete list of cited academic works and online materials. References should be included as in-text citations using IEEE style.
+5.2 Project Presentation
+As a team, you should create a video presentation of no more than 10 minutes. It should explain what you did, how you did it, why you did it, what you discovered, and why the work matters.
+Although individual members may present different parts, each member of the team is expected to be able to present all aspects of the work individually and without assistance if required.
+5.3 Code Artefact
+You should create a zip or gz archive containing all relevant assets, such as program code, data-processing scripts, data dictionaries where appropriate, and system configuration details sufficient to understand and review the implementation.
+5.4 Project Journal
+Each member of each project team should maintain an individual journal over the course of the project. The journal should include a brief description of each task carried out, the time spent, the challenges encountered, and how those challenges were addressed.
+Note: Submission of the journal is mandatory. Zero marks will be awarded to any team member for the entire project if a journal is not submitted.
+Weighting
+Journal Quality Descriptor
+70%
+A poor journal that fails to provide sufficient information on the team member's contribution, time spent, or challenges encountered.
+80%
+An adequate journal that provides rudimentary information on the team member's contribution, time spent, or challenges encountered.
+90%
+A good journal that provides reasonably in-depth information on the team member's contribution, time spent, or challenges encountered.
+100%
+An excellent journal that provides comprehensive information on the team member's contribution, time spent, or challenges encountered.
+6. Submission
+The project carries 70% of the total marks for the module, with a mark of 40% or greater required to pass.
+The project report must include the full name of each team member (as per NCI official documents) and their student number. These must be clearly visible on the front page of the report. The report should be uploaded as a PDF document to the Project Report Turnitin link on Moodle.
+The code artefact should be uploaded as a zip or gz archive to the Code Artefact link on Moodle.
+The project presentation must include the full name of each team member (as per NCI official documents) and their student number. These must be clearly visible at the start of the video. This should be uploaded as an mp4 video to the Project Presentation link on Moodle.
+For the project journal, there will be one submission for each team member. Again, this should be in PDF format and should include the full name of the student (as per NCI official documents) as well as their student number. This will be uploaded to the Project Journal Turnitin link on Moodle.
+Late submissions will not be accepted unless an extension has been requested through NCI360 and officially approved.
+7. Assessment Structure
+This recreated assessment structure places primary emphasis on originality of the idea and the value of the work, while still assessing dataset quality, modelling, technical execution, and academic communication.
+Criterion
+Weight
+What is Assessed
+Examples of Strong Evidence
+Novelty of the project idea / research question
+20%
+Originality of the core question, problem framing, or application direction.
+A fresh and clearly justified question that is not a straightforward repetition of standard classroom exercises.
+Novelty in dataset use or integration
+10%
+Creativity in selecting, combining, engineering, or repurposing datasets.
+Meaningful integration of multiple datasets, justified feature construction, or a non-obvious data strategy.
+Novelty in model, method, or pipeline design
+10%
+Distinctiveness of the technical approach, workflow, or modelling strategy.
+A thoughtfully designed pipeline, comparison framework, hybrid method, or model choice aligned to the question.
+Significance of the problem
+15%
+Importance and relevance of the domain, users, or research problem being addressed.
+A convincing explanation of why the problem matters and why solving it is worthwhile.
+Impact and usefulness of the work
+15%
+Potential value of the findings, artefact, insights, or system output.
+Clear benefit to stakeholders, practical applicability, or strong research contribution.
+Datasets and preprocessing quality
+10%
+Quality of data collection, storage, cleaning, transformation, and database use.
+Appropriate datasets, justified preprocessing decisions, and a robust data-management pipeline.
+Model implementation and evaluation
+10%
+Technical quality of the implementation, experiments, and evaluation process.
+Suitable models, justified metrics, sound comparisons, and correct interpretation of results.
+Paper writing, structure, and academic presentation
+10%
+Clarity, coherence, figures, citations, referencing, and adherence to IEEE format.
+A well-organised paper with strong academic writing, readable visuals, and correct referencing.
+Assessment interpretation: 
+Novelty contributes 40% in total, significance and impact contribute 30% in total, and the remaining 30% is distributed across datasets, models, and paper quality. This means a technically correct project with weak originality or limited importance is unlikely to achieve the highest marks.
+8. High-Level Grading Guidance
+Excellent / H1 range: 
+The work is original, important, well-executed, and convincingly argued. The novelty is clear, the impact is believable, and the technical pipeline is robust and well documented.
+Very Good / H2.1 range: 
+The work shows good originality and a clear purpose, with solid technical execution. There may be some weaknesses in depth, evaluation, or communication, but the contribution remains strong.
+Good / H2.2 range: 
+The project is competent and complete, but novelty or impact is only moderate. Technical work is acceptable, though some choices may be under-justified or limited.
+Pass range: 
+The project demonstrates a basic workable pipeline and some findings, but originality, significance, execution, or writing are limited.
+Fail range: 
+The project lacks clarity, originality, technical substance, or sufficient evidence. The submission may be incomplete, poorly justified, or inadequately communicated.
+9. Academic Integrity
+Any written work created by others must be properly cited and should be paraphrased or summarised where possible; otherwise, it should be placed in quotation marks. Figures not created by you should include an acknowledgement detailing the name(s) of the creator(s). Code found on the internet should not be claimed as your own; instead, a comment should be included in the source code indicating where it was obtained.
+Students are strongly advised to familiarise themselves with the Guide to Academic Integrity produced by the NCI Library:
+https://libguides.ncirl.ie/academicintegrity
+All submissions will be electronically screened for evidence of academic misconduct, including plagiarism, collusion, and misrepresentation. Any submission showing evidence of such misconduct may be referred to the college's academic misconduct committee for disciplinary action.
